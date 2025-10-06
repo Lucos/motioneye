@@ -50,6 +50,16 @@ You can contribute to translations on [__Weblate__](https://hosted.weblate.org/p
     ```
     _NB: `motioneye_init` currently assumes either an APT- or RPM-based distribution with `systemd` as init system. For a manual setup, config and service files can be found here: <https://github.com/motioneye-project/motioneye/tree/dev/motioneye/extra>_
 
+## Raspberry Pi OS (64-bit)
+
+* Raspberry Pi OS Bullseye and newer ship the [libcamera](https://www.raspberrypi.com/documentation/computers/camera_software.html) stack instead of the legacy MMAL implementation. The bundled `motioneye_init` helper now installs `libcamera-apps` so that the `libcamera-hello` and `libcamerify` utilities are available. motionEye automatically wraps the Motion daemon with `libcamerify` whenever an MMAL camera is configured, which allows existing configurations to run unchanged on the new stack.
+* To securely access motionEye without exposing an unencrypted HTTP endpoint, set up [Tailscale](https://tailscale.com/). After installing motionEye you can add the optional VPN client with:
+  ```sh
+  curl -fsSL https://tailscale.com/install.sh | sh
+  sudo tailscale up --ssh
+  ```
+  The `tailscale up` command creates a WireGuard-based mesh tunnel, providing authenticated and encrypted access to the motionEye interface from your other devices.
+
 # Upgrade
 
 ```sh

@@ -48,7 +48,7 @@ if command -v apt-get > /dev/null; then
   else
     echo 'WARNING: Distribution version could not be detected, installing motion from APT repository'
   fi
-  DEBIAN_FRONTEND="noninteractive" apt-get -y --no-install-recommends install "${MOTION}" v4l-utils ffmpeg curl
+  DEBIAN_FRONTEND="noninteractive" apt-get -y --no-install-recommends install "${MOTION}" v4l-utils ffmpeg curl libcamera-apps
   rm -f motion.deb
 elif command -v yum > /dev/null; then
   echo 'INFO: YUM-based distribution detected, installing motionEye dependencies'
@@ -56,6 +56,12 @@ elif command -v yum > /dev/null; then
 else
   echo 'WARNING: This system uses neither APT nor YUM. Please install these dependencies manually:
   motion v4l-utils ffmpeg curl'
+fi
+
+if ! command -v tailscale > /dev/null
+then
+  echo 'INFO: Tailscale is not installed. Install it to securely reach motionEye without exposing HTTP to the Internet:'
+  echo '      https://tailscale.com/download'
 fi
 
 # Stop and disable conflicting motion.service

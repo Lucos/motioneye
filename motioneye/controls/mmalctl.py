@@ -20,12 +20,7 @@ from subprocess import CalledProcessError
 from motioneye import utils
 
 
-def list_devices():
-    # currently MMAL support is designed specifically for the RPi;
-    # therefore we can rely on the vcgencmd to report MMAL cameras
-
-    debug('detecting MMAL camera')
-
+def _list_mmal_devices():
     try:
         binary = utils.call_subprocess(['which', 'vcgencmd'])
 
@@ -45,3 +40,56 @@ def list_devices():
         return [('vc.ril.camera', 'VideoCore Camera')]
 
     return []
+
+
+def _list_libcamera_devices():
+    try:
+        binary = utils.call_subprocess(['which', 'libcamera-hello'])
+
+    except CalledProcessError:  # not found
+        debug('unable to detect libcamera device: libcamera-hello not found')
+        return []
+
+    try:
+        output = utils.call_subprocess([binary, '--list-cameras'])
+
+    except CalledProcessError:  # command failed
+        debug('unable to detect libcamera device: "libcamera-hello --list-cameras" failed')
+        return []
+
+    cameras = []
+    for line in output.splitlines():
+        line = line.strip()
+        if not line or line.startswith('Available cameras:'):
+            continue
+
+        if ' : ' not in line:
+            continue
+
+        index, description = line.split(' : ', 1)
+        if not index.isdigit():
+            continue
+
+        name = description.split('[')[0].strip() or 'Raspberry Pi Camera'
+        path = 'vc.ril.camera' if not cameras else f'vc.ril.camera.{len(cameras)}'
+        cameras.append((path, name))
+
+    if not cameras:
+        debug('no libcamera devices were discovered')
+
+    return cameras
+
+
+def list_devices():
+    # currently MMAL support is designed specifically for the RPi;
+    # therefore we can rely on the vcgencmd to report MMAL cameras.
+    # On Raspberry Pi OS Bullseye and later, libcamera replaced the
+    # legacy stack, so fall back to the libcamera tooling.
+
+    debug('detecting Raspberry Pi camera')
+
+    cameras = _list_mmal_devices()
+    if cameras:
+        return cameras
+
+    return _list_libcamera_devices()

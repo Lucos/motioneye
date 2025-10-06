@@ -101,7 +101,26 @@ def start(deferred=False):
     motion_log_path = os.path.join(settings.LOG_PATH, 'motion.log')
     motion_pid_path = os.path.join(settings.RUN_PATH, 'motion.pid')
 
-    args = [binary, '-n', '-c', motion_cfg_path, '-d']
+    args = []
+
+    needs_libcamerify = any(
+        utils.is_mmal_camera(camera) for camera in enabled_local_motion_cameras
+    )
+
+    if needs_libcamerify:
+        try:
+            libcamerify = utils.call_subprocess(['which', 'libcamerify'])
+
+        except subprocess.CalledProcessError:
+            logging.warning(
+                'libcamerify wrapper not found; Raspberry Pi libcamera cameras may not work'
+            )
+
+        else:
+            logging.debug('wrapping motion with libcamerify to support libcamera stack')
+            args.append(libcamerify)
+
+    args.extend([binary, '-n', '-c', motion_cfg_path, '-d'])
 
     if settings.LOG_LEVEL <= logging.DEBUG:
         args.append('9')
